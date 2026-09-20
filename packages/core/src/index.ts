@@ -1,4 +1,5 @@
 export * from './types.js';
+export * from './constants.js';
 
 /**
  * Generate a cryptographically secure random challenge (Base64URL encoded)

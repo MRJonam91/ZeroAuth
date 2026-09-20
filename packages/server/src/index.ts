@@ -9,10 +9,24 @@ import { ZeroAuthStorageAdapter, MemoryStorageAdapter } from './storage.js';
 
 export * from './storage.js';
 
+/**
+ * Print a discrete terminal banner acknowledging zero-cost self-hosting and sponsor link
+ */
+export function printSponsorBanner(): void {
+  if (process.env['ZEROAUTH_SILENT'] === '1' || process.env['NODE_ENV'] === 'test') {
+    return;
+  }
+  console.log(
+    '\x1b[36m🔑 ZeroAuth\x1b[0m \x1b[90m(Self-hosted Passkeys) - 100% free & open-source.\x1b[0m\n' +
+    '\x1b[90m   Support development: https://github.com/sponsors/MRJonam91 | https://paypal.me/manorollo\x1b[0m\n'
+  );
+}
+
 export interface ZeroAuthServerOptions {
   rp: RelyingPartyConfig;
   storage?: ZeroAuthStorageAdapter;
   challengeTtlSeconds?: number;
+  silent?: boolean;
 }
 
 export class ZeroAuthServer {
@@ -24,6 +38,9 @@ export class ZeroAuthServer {
     this.rp = options.rp;
     this.storage = options.storage ?? new MemoryStorageAdapter();
     this.challengeTtlSeconds = options.challengeTtlSeconds ?? 120;
+    if (!options.silent) {
+      printSponsorBanner();
+    }
   }
 
   /**

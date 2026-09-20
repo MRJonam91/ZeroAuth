@@ -1,0 +1,28 @@
+{
+  "name": "@zeroauth/core",
+  "version": "0.1.0",
+  "description": "Core cryptographic primitives and FIDO2/WebAuthn Level 3 protocol logic for ZeroAuth",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test"
+  },
+  "keywords": [
+    "webauthn",
+    "passkeys",
+    "fido2",
+    "auth",
+    "security",
+    "zeroauth"
+  ],
+  "license": "MIT"
+}

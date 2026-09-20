@@ -1,0 +1,23 @@
+{
+  "name": "@zeroauth/server",
+  "version": "0.1.0",
+  "description": "Relying Party server, HTTP adapters, and storage drivers for ZeroAuth",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@zeroauth/core": "^0.1.0"
+  },
+  "license": "MIT"
+}

@@ -41,6 +41,9 @@ export class CborDecoder {
 
       case 2: { // Byte string
         const byteLen = Number(length);
+        if (this.offset + byteLen > this.buffer.byteLength) {
+          throw new Error('CBOR: Truncated byte string');
+        }
         const bytes = this.buffer.subarray(this.offset, this.offset + byteLen);
         this.offset += byteLen;
         return bytes;
@@ -48,6 +51,9 @@ export class CborDecoder {
 
       case 3: { // Text string
         const strLen = Number(length);
+        if (this.offset + strLen > this.buffer.byteLength) {
+          throw new Error('CBOR: Truncated text string');
+        }
         const strBytes = this.buffer.subarray(this.offset, this.offset + strLen);
         this.offset += strLen;
         return new TextDecoder('utf-8').decode(strBytes);

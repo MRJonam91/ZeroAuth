@@ -8,6 +8,7 @@
 [![English](https://img.shields.io/badge/Language-English-blue.svg)](#)
 [![Italiano](https://img.shields.io/badge/Lingua-Italiano-green.svg)](README.it.md)
 [![License: AGPLv3 / Dual](https://img.shields.io/badge/License-AGPLv3%20%2F%20Commercial-blue.svg)](LICENSE)
+[![Version: Alpha](https://img.shields.io/badge/release-v0.2.0--alpha-emerald.svg)](https://github.com/MRJonam91/ZeroAuth/releases/tag/v0.2.0-alpha)
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa.svg)](https://github.com/sponsors/MRJonam91)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-ff5e5b.svg)](https://ko-fi.com/mrjonam)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-yellow.svg)](https://buymeacoffee.com/mrjonam)

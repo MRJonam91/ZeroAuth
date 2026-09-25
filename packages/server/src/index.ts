@@ -14,6 +14,8 @@ import { ZeroAuthStorageAdapter, MemoryStorageAdapter } from './storage.js';
 
 export * from './storage.js';
 export * from './sqlite.js';
+export * from './session.js';
+export * from './handler.js';
 
 /**
  * Print a discrete terminal banner acknowledging zero-cost self-hosting and sponsor link

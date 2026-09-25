@@ -4,7 +4,7 @@ import type {
   ZeroAuthCredential,
   ZeroAuthChallenge,
 } from '@zeroauth/core';
-import type { ZeroAuthStorageAdapter } from './storage.js';
+import type { ZeroAuthStorageAdapter, ZeroAuthSession } from './storage.js';
 
 export interface SqliteStorageOptions {
   filename?: string; // ':memory:' or file path like './zeroauth.db'
@@ -51,6 +51,14 @@ export class SqliteStorageAdapter implements ZeroAuthStorageAdapter {
         userId TEXT,
         type TEXT NOT NULL,
         expiresAt TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY,
+        userId TEXT NOT NULL,
+        expiresAt TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        lastActiveAt TEXT NOT NULL
       );
     `);
   }
@@ -189,6 +197,50 @@ export class SqliteStorageAdapter implements ZeroAuthStorageAdapter {
   async deleteChallenge(challenge: string): Promise<void> {
     const stmt = this.db.prepare('DELETE FROM challenges WHERE challenge = ?');
     stmt.run(challenge);
+  }
+
+  async saveSession(session: ZeroAuthSession): Promise<void> {
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO sessions (id, userId, expiresAt, createdAt, lastActiveAt)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    stmt.run(
+      session.id,
+      session.userId,
+      session.expiresAt.toISOString(),
+      session.createdAt.toISOString(),
+      session.lastActiveAt.toISOString()
+    );
+  }
+
+  async getSession(sessionId: string): Promise<ZeroAuthSession | null> {
+    const stmt = this.db.prepare('SELECT * FROM sessions WHERE id = ?');
+    const row = stmt.get(sessionId) as any;
+    if (!row) return null;
+
+    const expiresAt = new Date(row.expiresAt);
+    if (new Date() > expiresAt) {
+      await this.deleteSession(sessionId);
+      return null;
+    }
+
+    return {
+      id: row.id,
+      userId: row.userId,
+      expiresAt,
+      createdAt: new Date(row.createdAt),
+      lastActiveAt: new Date(row.lastActiveAt),
+    };
+  }
+
+  async deleteSession(sessionId: string): Promise<void> {
+    const stmt = this.db.prepare('DELETE FROM sessions WHERE id = ?');
+    stmt.run(sessionId);
+  }
+
+  async deleteExpiredSessions(): Promise<void> {
+    const stmt = this.db.prepare('DELETE FROM sessions WHERE expiresAt < ?');
+    stmt.run(new Date().toISOString());
   }
 
   private mapCredentialRow(row: any): ZeroAuthCredential {

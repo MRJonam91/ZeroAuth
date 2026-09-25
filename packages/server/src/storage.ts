@@ -4,6 +4,14 @@ import type {
   ZeroAuthChallenge,
 } from '@zeroauth/core';
 
+export interface ZeroAuthSession {
+  id: string; // Opaque secure session token
+  userId: string;
+  expiresAt: Date;
+  createdAt: Date;
+  lastActiveAt: Date;
+}
+
 export interface ZeroAuthStorageAdapter {
   // User Management
   getUserById(id: string): Promise<ZeroAuthUser | null>;
@@ -21,6 +29,12 @@ export interface ZeroAuthStorageAdapter {
   saveChallenge(challenge: ZeroAuthChallenge): Promise<void>;
   getChallenge(challenge: string): Promise<ZeroAuthChallenge | null>;
   deleteChallenge(challenge: string): Promise<void>;
+
+  // Session Management
+  saveSession(session: ZeroAuthSession): Promise<void>;
+  getSession(sessionId: string): Promise<ZeroAuthSession | null>;
+  deleteSession(sessionId: string): Promise<void>;
+  deleteExpiredSessions(): Promise<void>;
 }
 
 /**
@@ -31,6 +45,7 @@ export class MemoryStorageAdapter implements ZeroAuthStorageAdapter {
   private usersByUsername = new Map<string, ZeroAuthUser>();
   private credentials = new Map<string, ZeroAuthCredential>();
   private challenges = new Map<string, ZeroAuthChallenge>();
+  private sessions = new Map<string, ZeroAuthSession>();
 
   async getUserById(id: string): Promise<ZeroAuthUser | null> {
     return this.usersById.get(id) ?? null;
@@ -98,5 +113,32 @@ export class MemoryStorageAdapter implements ZeroAuthStorageAdapter {
 
   async deleteChallenge(challenge: string): Promise<void> {
     this.challenges.delete(challenge);
+  }
+
+  async saveSession(session: ZeroAuthSession): Promise<void> {
+    this.sessions.set(session.id, session);
+  }
+
+  async getSession(sessionId: string): Promise<ZeroAuthSession | null> {
+    const session = this.sessions.get(sessionId);
+    if (!session) return null;
+    if (new Date() > session.expiresAt) {
+      this.sessions.delete(sessionId);
+      return null;
+    }
+    return session;
+  }
+
+  async deleteSession(sessionId: string): Promise<void> {
+    this.sessions.delete(sessionId);
+  }
+
+  async deleteExpiredSessions(): Promise<void> {
+    const now = new Date();
+    for (const [id, session] of this.sessions.entries()) {
+      if (now > session.expiresAt) {
+        this.sessions.delete(id);
+      }
+    }
   }
 }

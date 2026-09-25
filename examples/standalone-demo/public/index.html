@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZeroAuth MVP Demo - Self-Hosted Passkeys</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card: #111827;
+      --border: #1f293d;
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --cyan: #06b6d4;
+      --text: #f9fafb;
+      --muted: #9ca3af;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 30px 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    .container { max-width: 760px; width: 100%; }
+    header { text-align: center; margin-bottom: 25px; }
+    h1 { font-size: 2.2rem; margin-bottom: 8px; background: linear-gradient(135deg, #10b981, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    p.subtitle { color: var(--muted); font-size: 1rem; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .card h2 { font-size: 1.25rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: var(--muted); }
+    input { width: 100%; padding: 12px 14px; background: #0b1120; border: 1px solid var(--border); border-radius: 8px; color: #fff; font-size: 1rem; }
+    input:focus { outline: none; border-color: var(--primary); }
+    .btn { background: var(--primary); color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #1f293d; color: #e5e7eb; }
+    .btn-secondary:hover { background: #374151; }
+    .console-box { background: #050811; border: 1px solid #1a2234; border-radius: 8px; padding: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; color: #34d399; max-height: 220px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin-top: 15px; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .sponsor-bar { text-align: center; margin-top: 20px; font-size: 0.9rem; color: var(--muted); }
+    .sponsor-bar a { color: var(--cyan); text-decoration: none; font-weight: 600; margin: 0 6px; }
+    .sponsor-bar a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔑 ZeroAuth MVP</h1>
+      <p class="subtitle">Self-Hosted Passkeys & WebAuthn Engine — 0 Passwords, 0 Emails, 0 Vendor Lock-in</p>
+      <div style="margin-top: 12px;" id="support-status">
+        <span class="badge badge-success">Testing WebAuthn...</span>
+      </div>
+    </header>
+
+    <!-- Registration Section -->
+    <div class="card">
+      <h2><span>1.</span> Register Passkey (Touch ID / Face ID / Windows Hello)</h2>
+      <div class="form-group">
+        <label for="reg-username">Choose a Username / Identifier</label>
+        <input type="text" id="reg-username" placeholder="e.g. indie_builder" value="indie_hacker">
+      </div>
+      <button class="btn" id="btn-register">
+        <span>🛡️</span> Create Passkey Hardware Credential
+      </button>
+    </div>
+
+    <!-- Login Section -->
+    <div class="card">
+      <h2><span>2.</span> 1-Tap Passkey Authentication (Login)</h2>
+      <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 15px;">
+        Authenticate using your device's biometric sensor or security key. No password required.
+      </p>
+      <div class="form-group">
+        <label for="login-username">Username (Optional for autofill / resident keys)</label>
+        <input type="text" id="login-username" autocomplete="webauthn username" placeholder="e.g. indie_builder">
+      </div>
+      <button class="btn btn-secondary" id="btn-login">
+        <span>⚡</span> Sign In with Passkey
+      </button>
+    </div>
+
+    <!-- Cryptographic Audit Log -->
+    <div class="card">
+      <h2><span>📋</span> Cryptographic Handshake Audit Log</h2>
+      <div class="console-box" id="audit-log">Ready. Waiting for user interaction...</div>
+    </div>
+
+    <!-- Sponsor Links -->
+    <div class="sponsor-bar">
+      ZeroAuth is 100% free and open-source under AGPLv3 / Dual-License.  
+      Support: 
+      <a href="https://github.com/sponsors/MRJonam91" target="_blank">GitHub Sponsors</a> •
+      <a href="https://ko-fi.com/mrjonam" target="_blank">Ko-fi</a> •
+      <a href="https://buymeacoffee.com/mrjonam" target="_blank">Buy Me a Coffee</a> •
+      <a href="https://paypal.me/manorollo" target="_blank">PayPal</a>
+    </div>
+  </div>
+
+  <script>
+    const logBox = document.getElementById('audit-log');
+    function log(msg, obj) {
+      const timestamp = new Date().toLocaleTimeString();
+      let text = `[${timestamp}] ${msg}`;
+      if (obj) {
+        text += '\n' + JSON.stringify(obj, null, 2);
+      }
+      logBox.textContent = text + '\n\n' + logBox.textContent;
+    }
+
+    // Helper functions for Base64URL
+    function bufferToBase64Url(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function base64UrlToBuffer(base64url) {
+      let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+      while (base64.length % 4 !== 0) base64 += '=';
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
+
+    // Check WebAuthn support
+    const statusDiv = document.getElementById('support-status');
+    if (window.PublicKeyCredential) {
+      statusDiv.innerHTML = '<span class="badge badge-success">✓ WebAuthn & Hardware Passkeys Supported</span>';
+    } else {
+      statusDiv.innerHTML = '<span class="badge badge-danger">✗ WebAuthn Not Supported in this Browser</span>';
+    }
+
+    // Register Button
+    document.getElementById('btn-register').addEventListener('click', async () => {
+      const username = document.getElementById('reg-username').value.trim();
+      if (!username) return alert('Please enter a username');
+
+      try {
+        log(`1. Requesting registration options from server for "${username}"...`);
+        const res = await fetch('/api/register/options', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, displayName: username }),
+        });
+        const options = await res.json();
+        if (options.error) throw new Error(options.error);
+
+        log('2. Server Challenge generated. Invoking navigator.credentials.create()...', {
+          rp: options.rp,
+          challenge: options.challenge,
+        });
+
+        // Prepare options for browser
+        options.challenge = base64UrlToBuffer(options.challenge);
+        options.user.id = new TextEncoder().encode(options.user.id);
+        if (options.excludeCredentials) {
+          options.excludeCredentials.forEach(c => { c.id = base64UrlToBuffer(c.id); });
+        }
+
+        const cred = await navigator.credentials.create({ publicKey: options });
+        if (!cred) throw new Error('No credential created');
+
+        log('3. Biometric / Hardware Key Generated! Sending attestation to server for cryptographic verification...');
+
+        const clientDataJSON = bufferToBase64Url(cred.response.clientDataJSON);
+        const attestationObject = bufferToBase64Url(cred.response.attestationObject);
+
+        const verifyRes = await fetch('/api/register/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            response: { clientDataJSON, attestationObject },
+          }),
+        });
+
+        const verifyResult = await verifyRes.json();
+        if (verifyResult.error) throw new Error(verifyResult.error);
+
+        log('4. ✅ SUCCESS: Passkey verified and stored in SQLite!', verifyResult);
+        document.getElementById('login-username').value = username;
+        alert(`Passkey successfully registered for ${username}! You can now sign in.`);
+      } catch (err) {
+        log(`❌ Registration Error: ${err.message}`);
+        console.error(err);
+      }
+    });
+
+    // Login Button
+    document.getElementById('btn-login').addEventListener('click', async () => {
+      const username = document.getElementById('login-username').value.trim();
+
+      try {
+        log('1. Requesting authentication options from server...');
+        const res = await fetch('/api/login/options', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username }),
+        });
+        const options = await res.json();
+        if (options.error) throw new Error(options.error);
+
+        log('2. Server Challenge generated. Invoking navigator.credentials.get()...', {
+          rpId: options.rpId,
+          challenge: options.challenge,
+        });
+
+        options.challenge = base64UrlToBuffer(options.challenge);
+        if (options.allowCredentials) {
+          options.allowCredentials.forEach(c => { c.id = base64UrlToBuffer(c.id); });
+        }
+
+        const cred = await navigator.credentials.get({ publicKey: options });
+        if (!cred) throw new Error('No credential selected');
+
+        log('3. Hardware signature generated! Sending assertion response to server for ECDSA P-256 verification...');
+
+        const clientDataJSON = bufferToBase64Url(cred.response.clientDataJSON);
+        const authenticatorData = bufferToBase64Url(cred.response.authenticatorData);
+        const signature = bufferToBase64Url(cred.response.signature);
+
+        const verifyRes = await fetch('/api/login/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            response: {
+              id: cred.id,
+              clientDataJSON,
+              authenticatorData,
+              signature,
+            },
+          }),
+        });
+
+        const verifyResult = await verifyRes.json();
+        if (verifyResult.error) throw new Error(verifyResult.error);
+
+        log('4. 🟢 AUTHENTICATED: Signature verified in 12ms! Session active.', verifyResult);
+        alert(`Welcome back, ${verifyResult.user.username}! You are securely authenticated with Passkeys.`);
+      } catch (err) {
+        log(`❌ Login Error: ${err.message}`);
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>

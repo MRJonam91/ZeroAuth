@@ -3,6 +3,7 @@ export * from './constants.js';
 export * from './cbor.js';
 export * from './crypto.js';
 export * from './verification.js';
+export * from './aaguid.js';
 
 /**
  * Generate a cryptographically secure random challenge (Base64URL encoded)

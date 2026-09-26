@@ -8,7 +8,7 @@
 [![English](https://img.shields.io/badge/Language-English-blue.svg)](#)
 [![Italiano](https://img.shields.io/badge/Lingua-Italiano-green.svg)](README.it.md)
 [![License: AGPLv3 / Dual](https://img.shields.io/badge/License-AGPLv3%20%2F%20Commercial-blue.svg)](LICENSE)
-[![Version: Alpha](https://img.shields.io/badge/release-v0.2.0--alpha-emerald.svg)](https://github.com/MRJonam91/ZeroAuth/releases/tag/v0.2.0-alpha)
+[![Version: Beta](https://img.shields.io/badge/release-v0.3.0--beta-emerald.svg)](https://github.com/MRJonam91/ZeroAuth/releases/tag/v0.3.0-beta)
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa.svg)](https://github.com/sponsors/MRJonam91)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-ff5e5b.svg)](https://ko-fi.com/mrjonam)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-yellow.svg)](https://buymeacoffee.com/mrjonam)
@@ -33,19 +33,22 @@ Traditional cloud auth providers (Auth0, Clerk, Supabase Auth, Firebase) create 
 | **Pricing at Scale** | $350+/mo once you exceed 10k MAU | **$0.00 Forever** |
 | **Email/SMS Costs** | High SendGrid/Resend/Twilio monthly bills | **$0.00 (No emails needed)** |
 | **Security Risk** | Phishing, credential stuffing, password leaks | **Zero Trust (Hardware Enclaves)** |
-| **Vendor Lock-in** | Your users and credentials live in their cloud | **100% Owned on your SQLite / PG** |
+| **Vendor Lock-in** | Your users and credentials live in their cloud | **100% Owned on your SQLite / Postgres** |
 | **Code Weight** | Heavy blackbox SDKs with dozens of dependencies | **Ultra-lightweight (Core < 1,500 LOC)** |
 
 ---
 
-## 🌟 Key Features
+## 🌟 Key Features (Beta v0.3.0)
 
 - 👆 **1-Tap Biometrics**: Touch ID, Face ID, Windows Hello, Android Biometrics, YubiKey hardware keys.
 - ⚡ **Zero Passwords, Zero Emails**: Identity is bound to asymmetric cryptographic keypairs generated inside hardware Secure Enclaves.
-- 🛡️ **Phishing-Proof by Design**: Bound directly to your domain origin via the W3C WebAuthn Level 3 protocol.
-- 🧩 **Pluggable Persistence**: Agnostic `ZeroAuthStorageAdapter` interface supporting SQLite/LibSQL (Turso/local file) and PostgreSQL.
-- 📱 **Conditional UI (Passkey Autofill)**: Native 1-click credential suggestions directly in browser input forms.
-- 🪶 **Core < 1,500 LOC**: Clean, zero-bloat architecture designed so any developer can audit and extend it in under an hour.
+- 🔑 **Multi-Passkey Support**: Register multiple backup passkeys per user (e.g. MacBook Touch ID + iPhone Face ID + YubiKey hardware key), rename, and revoke them.
+- 🏷️ **AAGUID Hardware Resolution**: Automatically detects and displays device model (Apple iCloud Keychain, Windows Hello, YubiKey 5 Series, Google Password Manager).
+- 🛡️ **Anti-Abuse Rate Limiter**: Built-in sliding-window challenge throttling to protect against automated DoS and brute-force attacks.
+- 🌐 **Universal Web Standard Handler**: Ready for Next.js App Router, Hono, SvelteKit, Astro, Bun, Express, and Fastify in 1 line.
+- ⚛️ **Ready-to-Use React UI Components**: `<PasskeyButton>` and `<PasskeyList>` with global `<ZeroAuthProvider>` state management.
+- 🧩 **PostgreSQL & SQLite Adapters**: Production-ready `PostgresStorageAdapter` and zero-dependency `SqliteStorageAdapter`.
+- 🪶 **Core < 1,500 LOC (833 LOC)**: Clean, zero-bloat architecture designed so any developer can audit and extend it in under an hour.
 
 ---
 

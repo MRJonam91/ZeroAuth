@@ -127,6 +127,7 @@ export async function startPasskeyRegistration(options: RegistrationOptions) {
 
     const credential = (await navigator.credentials.create({
       publicKey: publicKeyCredentialCreationOptions,
+      signal: (options as any).signal,
     })) as PublicKeyCredential | null;
 
     if (!credential) {
@@ -153,7 +154,7 @@ export async function startPasskeyRegistration(options: RegistrationOptions) {
  * Trigger passkey authentication / login prompt in the browser
  */
 export async function startPasskeyAuthentication(
-  options: AuthenticationOptions,
+  options: AuthenticationOptions & { signal?: AbortSignal },
   useConditionalUI = false
 ) {
   if (!isWebAuthnSupported()) {
@@ -181,6 +182,7 @@ export async function startPasskeyAuthentication(
     const credential = (await navigator.credentials.get({
       publicKey: publicKeyCredentialRequestOptions,
       mediation: useConditionalUI ? 'conditional' : 'optional',
+      signal: options.signal,
     })) as PublicKeyCredential | null;
 
     if (!credential) {

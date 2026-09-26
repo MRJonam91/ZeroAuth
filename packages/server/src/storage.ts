@@ -23,6 +23,7 @@ export interface ZeroAuthStorageAdapter {
   listCredentialsByUserId(userId: string): Promise<ZeroAuthCredential[]>;
   saveCredential(credential: ZeroAuthCredential): Promise<void>;
   updateCredentialCounter(credentialId: string, counter: number): Promise<void>;
+  updateCredentialName(credentialId: string, name: string): Promise<void>;
   deleteCredential(credentialId: string): Promise<void>;
 
   // Challenge Management
@@ -90,6 +91,13 @@ export class MemoryStorageAdapter implements ZeroAuthStorageAdapter {
     if (cred) {
       cred.counter = counter;
       cred.lastUsedAt = new Date();
+    }
+  }
+
+  async updateCredentialName(credentialId: string, name: string): Promise<void> {
+    const cred = this.credentials.get(credentialId);
+    if (cred) {
+      cred.name = name;
     }
   }
 

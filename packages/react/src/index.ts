@@ -19,6 +19,7 @@ import type {
 } from '@zeroauth/core';
 
 export * from '@zeroauth/client';
+export * from './components.js';
 
 export interface UsePasskeyReturn {
   isSupported: boolean;

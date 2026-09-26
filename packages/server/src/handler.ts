@@ -34,6 +34,16 @@ export function createZeroAuthHandler(
       });
     }
 
+    // Helper to extract client identifier (IP address) for rate-limiting
+    function getClientIdentifier(): string {
+      return (
+        request.headers.get('cf-connecting-ip') ||
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        request.headers.get('x-real-ip') ||
+        'client-ip'
+      );
+    }
+
     // Helper to extract session ID from Cookie header or Authorization header
     function extractSessionId(): string | null {
       const authHeader = request.headers.get('Authorization');
@@ -69,6 +79,7 @@ export function createZeroAuthHandler(
         const regOptions = await server.createRegistrationOptions({
           username: body.username,
           displayName: body.displayName,
+          clientIdentifier: getClientIdentifier(),
         });
         return json(regOptions);
       }
@@ -80,6 +91,7 @@ export function createZeroAuthHandler(
           username: body.username,
           displayName: body.displayName,
           response: body.response,
+          credentialName: body.credentialName,
         });
 
         const session = await sessionManager.createSession(result.user.id);
@@ -104,6 +116,7 @@ export function createZeroAuthHandler(
         } catch {}
         const authOptions = await server.createAuthenticationOptions({
           username: body?.username,
+          clientIdentifier: getClientIdentifier(),
         });
         return json(authOptions);
       }
@@ -155,6 +168,58 @@ export function createZeroAuthHandler(
         }
         const expiredCookie = `${cookieName}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
         return json({ success: true }, 200, { 'Set-Cookie': expiredCookie });
+      }
+
+      // 7. GET /credentials (List user credentials)
+      if (request.method === 'GET' && path === `${basePath}/credentials`) {
+        const sessionId = extractSessionId();
+        if (!sessionId) return json({ error: 'Unauthorized' }, 401);
+        const auth = await sessionManager.validateSession(sessionId);
+        if (!auth) return json({ error: 'Unauthorized' }, 401);
+
+        const credentials = await server.listUserCredentials(auth.user.id);
+        return json({
+          credentials: credentials.map((c) => ({
+            id: c.id,
+            name: c.name,
+            deviceType: c.deviceType,
+            backedUp: c.backedUp,
+            createdAt: c.createdAt,
+            lastUsedAt: c.lastUsedAt,
+          })),
+        });
+      }
+
+      // 8. PATCH /credentials (Rename a credential)
+      if (request.method === 'PATCH' && path === `${basePath}/credentials`) {
+        const sessionId = extractSessionId();
+        if (!sessionId) return json({ error: 'Unauthorized' }, 401);
+        const auth = await sessionManager.validateSession(sessionId);
+        if (!auth) return json({ error: 'Unauthorized' }, 401);
+
+        const body = (await request.json()) as any;
+        if (!body.credentialId || !body.name) {
+          return json({ error: 'credentialId and name are required' }, 400);
+        }
+
+        await server.renameCredential(body.credentialId, body.name);
+        return json({ success: true });
+      }
+
+      // 9. DELETE /credentials (Revoke a credential)
+      if (request.method === 'DELETE' && path === `${basePath}/credentials`) {
+        const sessionId = extractSessionId();
+        if (!sessionId) return json({ error: 'Unauthorized' }, 401);
+        const auth = await sessionManager.validateSession(sessionId);
+        if (!auth) return json({ error: 'Unauthorized' }, 401);
+
+        const body = (await request.json()) as any;
+        if (!body.credentialId) {
+          return json({ error: 'credentialId is required' }, 400);
+        }
+
+        await server.revokeCredential(body.credentialId);
+        return json({ success: true });
       }
 
       // Unknown route

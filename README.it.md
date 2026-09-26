@@ -8,7 +8,7 @@
 [![English](https://img.shields.io/badge/Language-English-blue.svg)](README.md)
 [![Italiano](https://img.shields.io/badge/Lingua-Italiano-green.svg)](#)
 [![Licenza: AGPLv3 / Dual](https://img.shields.io/badge/Licenza-AGPLv3%20%2F%20Commerciale-blue.svg)](LICENSE)
-[![Versione: Alpha](https://img.shields.io/badge/release-v0.2.0--alpha-emerald.svg)](https://github.com/MRJonam91/ZeroAuth/releases/tag/v0.2.0-alpha)
+[![Versione: Beta](https://img.shields.io/badge/release-v0.3.0--beta-emerald.svg)](https://github.com/MRJonam91/ZeroAuth/releases/tag/v0.3.0-beta)
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa.svg)](https://github.com/sponsors/MRJonam91)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Supporta-ff5e5b.svg)](https://ko-fi.com/mrjonam)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Dona-yellow.svg)](https://buymeacoffee.com/mrjonam)
@@ -38,14 +38,17 @@ I provider di autenticazione cloud (Auth0, Clerk, Supabase Auth, Firebase) rappr
 
 ---
 
-## 🌟 Funzionalità Principali
+## 🌟 Funzionalità Principali (Beta v0.3.0)
 
 - 👆 **Biometria in 1-Tap**: Touch ID, Face ID, Windows Hello, Android Biometrics e chiavi fisiche YubiKey.
 - ⚡ **Zero Password, Zero Email**: L'identità è vincolata a coppie di chiavi asimmetriche generate nella Secure Enclave del dispositivo.
-- 🛡️ **A Prova di Phishing**: Crittograficamente vincolato al dominio dell'applicazione tramite lo standard W3C WebAuthn Level 3.
-- 🧩 **Persistenza Agnostica**: Interfaccia unificata `ZeroAuthStorageAdapter` con supporto SQLite/LibSQL e PostgreSQL.
-- 📱 **Conditional UI (Passkey Autofill)**: Suggerimento nativo delle passkey salvate direttamente nei campi di testo del browser.
-- 🪶 **Core < 1.500 LOC**: Architettura zero-bloat progettata per essere compresa, verificata ed estesa in meno di 1 ora.
+- 🔑 **Supporto Multi-Passkey**: Registra più chiavi hardware di backup per lo stesso utente (es. Mac + iPhone + YubiKey), con rinomina ed eliminazione.
+- 🏷️ **Riconoscimento Hardware AAGUID**: Identifica automaticamente il modello di autenticatore (Apple iCloud Keychain, Windows Hello, YubiKey 5, Google).
+- 🛡️ **Protezione Anti-Abuso (Rate Limiter)**: Throttling a finestra scorrevole integrato per proteggere le challenge da flood e DoS.
+- 🌐 **Universal Web Standard Handler**: Pronto all'uso per Next.js App Router, Hono, SvelteKit, Astro, Bun, Express e Fastify in 1 sola riga.
+- ⚛️ **Componenti UI React Pronti**: `<PasskeyButton>` e `<PasskeyList>` con gestione stato globale tramite `<ZeroAuthProvider>`.
+- 🧩 **Adattatori PostgreSQL & SQLite**: Driver di produzione `PostgresStorageAdapter` e driver leggero zero-dependency `SqliteStorageAdapter`.
+- 🪶 **Core < 1.500 LOC (833 LOC)**: Architettura modulare progettata per essere auditabile e manutenibile in meno di 1 ora.
 
 ---
 

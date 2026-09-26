@@ -157,6 +157,15 @@ export class SqliteStorageAdapter implements ZeroAuthStorageAdapter {
     stmt.run(counter, new Date().toISOString(), credentialId);
   }
 
+  async updateCredentialName(credentialId: string, name: string): Promise<void> {
+    const stmt = this.db.prepare(`
+      UPDATE credentials 
+      SET name = ?
+      WHERE id = ?
+    `);
+    stmt.run(name, credentialId);
+  }
+
   async deleteCredential(credentialId: string): Promise<void> {
     const stmt = this.db.prepare('DELETE FROM credentials WHERE id = ?');
     stmt.run(credentialId);

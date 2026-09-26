@@ -9,13 +9,17 @@ import {
   verifyRegistrationResponse,
   verifyAuthenticationResponse,
   parseClientData,
+  lookupAAGUID,
 } from '@zeroauth/core';
 import { ZeroAuthStorageAdapter, MemoryStorageAdapter } from './storage.js';
+import { RateLimiter } from './rate-limiter.js';
 
 export * from './storage.js';
 export * from './sqlite.js';
+export * from './postgres.js';
 export * from './session.js';
 export * from './handler.js';
+export * from './rate-limiter.js';
 
 /**
  * Print a discrete terminal banner acknowledging zero-cost self-hosting and sponsor link
@@ -35,17 +39,20 @@ export interface ZeroAuthServerOptions {
   storage?: ZeroAuthStorageAdapter;
   challengeTtlSeconds?: number;
   silent?: boolean;
+  rateLimiter?: RateLimiter | null;
 }
 
 export class ZeroAuthServer {
   readonly rp: RelyingPartyConfig;
   readonly storage: ZeroAuthStorageAdapter;
   readonly challengeTtlSeconds: number;
+  readonly rateLimiter: RateLimiter | null;
 
   constructor(options: ZeroAuthServerOptions) {
     this.rp = options.rp;
     this.storage = options.storage ?? new MemoryStorageAdapter();
     this.challengeTtlSeconds = options.challengeTtlSeconds ?? 120;
+    this.rateLimiter = options.rateLimiter !== undefined ? options.rateLimiter : new RateLimiter();
     if (!options.silent) {
       printSponsorBanner();
     }
@@ -58,7 +65,15 @@ export class ZeroAuthServer {
     username: string;
     displayName?: string;
     userId?: string;
+    clientIdentifier?: string;
   }): Promise<RegistrationOptions> {
+    if (this.rateLimiter && params.clientIdentifier) {
+      const check = this.rateLimiter.check(params.clientIdentifier);
+      if (!check.allowed) {
+        throw new Error(`Too many registration requests. Try again in ${Math.ceil(check.resetMs / 1000)} seconds.`);
+      }
+    }
+
     const challenge = generateChallenge();
     const expiresAt = new Date(Date.now() + this.challengeTtlSeconds * 1000);
 
@@ -113,6 +128,7 @@ export class ZeroAuthServer {
     username: string;
     displayName?: string;
     requireUserVerification?: boolean;
+    credentialName?: string;
   }): Promise<{
     verified: boolean;
     user: ZeroAuthUser;
@@ -146,6 +162,10 @@ export class ZeroAuthServer {
       });
     }
 
+    // Default friendly device name if not provided
+    const aaguidMeta = verification.credential.id ? lookupAAGUID(new Uint8Array(16)) : null;
+    const defaultName = params.credentialName || aaguidMeta?.name || 'Passkey Device';
+
     const now = new Date();
     const credentialRecord: ZeroAuthCredential = {
       id: verification.credential.id,
@@ -154,6 +174,7 @@ export class ZeroAuthServer {
       counter: verification.credential.counter,
       deviceType: verification.credential.deviceType,
       backedUp: verification.credential.backedUp,
+      name: defaultName,
       createdAt: now,
       lastUsedAt: now,
     };
@@ -173,7 +194,15 @@ export class ZeroAuthServer {
   async createAuthenticationOptions(params?: {
     userId?: string;
     username?: string;
+    clientIdentifier?: string;
   }): Promise<AuthenticationOptions> {
+    if (this.rateLimiter && params?.clientIdentifier) {
+      const check = this.rateLimiter.check(params.clientIdentifier);
+      if (!check.allowed) {
+        throw new Error(`Too many authentication requests. Try again in ${Math.ceil(check.resetMs / 1000)} seconds.`);
+      }
+    }
+
     const challenge = generateChallenge();
     const expiresAt = new Date(Date.now() + this.challengeTtlSeconds * 1000);
 
@@ -270,5 +299,30 @@ export class ZeroAuthServer {
       user,
       credential,
     };
+  }
+
+  // ==========================================
+  // Multi-Passkey Management API
+  // ==========================================
+
+  /**
+   * List all registered passkeys for a user
+   */
+  async listUserCredentials(userId: string): Promise<ZeroAuthCredential[]> {
+    return this.storage.listCredentialsByUserId(userId);
+  }
+
+  /**
+   * Rename a registered passkey (e.g. "Work MacBook Touch ID")
+   */
+  async renameCredential(credentialId: string, name: string): Promise<void> {
+    await this.storage.updateCredentialName(credentialId, name);
+  }
+
+  /**
+   * Revoke/delete a specific passkey
+   */
+  async revokeCredential(credentialId: string): Promise<void> {
+    await this.storage.deleteCredential(credentialId);
   }
 }

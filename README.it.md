@@ -8,7 +8,7 @@
 [![English](https://img.shields.io/badge/Language-English-blue.svg)](README.md)
 [![Italiano](https://img.shields.io/badge/Lingua-Italiano-green.svg)](#)
 [![Licenza: AGPLv3 / Dual](https://img.shields.io/badge/Licenza-AGPLv3%20%2F%20Commerciale-blue.svg)](LICENSE)
-[![Versione: Beta](https://img.shields.io/badge/release-v0.3.0--beta-emerald.svg)](https://github.com/MRJonam91/ZeroAuth/releases/tag/v0.3.0-beta)
+[![Versione: 1.0.0](https://img.shields.io/badge/release-v1.0.0%20Stabile-emerald.svg)](https://github.com/MRJonam91/ZeroAuth/releases/tag/v1.0.0)
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa.svg)](https://github.com/sponsors/MRJonam91)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Supporta-ff5e5b.svg)](https://ko-fi.com/mrjonam)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Dona-yellow.svg)](https://buymeacoffee.com/mrjonam)
@@ -38,17 +38,86 @@ I provider di autenticazione cloud (Auth0, Clerk, Supabase Auth, Firebase) rappr
 
 ---
 
-## 🌟 Funzionalità Principali (Beta v0.3.0)
+## 🌟 Funzionalità Principali (v1.0.0 General Availability)
 
 - 👆 **Biometria in 1-Tap**: Touch ID, Face ID, Windows Hello, Android Biometrics e chiavi fisiche YubiKey.
 - ⚡ **Zero Password, Zero Email**: L'identità è vincolata a coppie di chiavi asimmetriche generate nella Secure Enclave del dispositivo.
 - 🔑 **Supporto Multi-Passkey**: Registra più chiavi hardware di backup per lo stesso utente (es. Mac + iPhone + YubiKey), con rinomina ed eliminazione.
-- 🏷️ **Riconoscimento Hardware AAGUID**: Identifica automaticamente il modello di autenticatore (Apple iCloud Keychain, Windows Hello, YubiKey 5, Google).
+- 🏷️ **Riconoscimento Hardware AAGUID**: Identifica automaticamente il modello di autenticatore (Apple iCloud Keychain, Windows Hello, YubiKey 5, Google Password Manager).
 - 🛡️ **Protezione Anti-Abuso (Rate Limiter)**: Throttling a finestra scorrevole integrato per proteggere le challenge da flood e DoS.
-- 🌐 **Universal Web Standard Handler**: Pronto all'uso per Next.js App Router, Hono, SvelteKit, Astro, Bun, Express e Fastify in 1 sola riga.
+- 🌐 **Universal Web Standard Handler**: Pronto all'uso per **Next.js App Router**, **Hono**, **SvelteKit**, **Astro**, **Bun**, **Express** e **Fastify** in 1 sola riga.
 - ⚛️ **Componenti UI React Pronti**: `<PasskeyButton>` e `<PasskeyList>` con gestione stato globale tramite `<ZeroAuthProvider>`.
-- 🧩 **Adattatori PostgreSQL & SQLite**: Driver di produzione `PostgresStorageAdapter` e driver leggero zero-dependency `SqliteStorageAdapter`.
+- 🧩 **Adattatori PostgreSQL & SQLite**: Driver di produzione `PostgresStorageAdapter` e driver leggero zero-dependency `SqliteStorageAdapter` basato su `node:sqlite`.
 - 🪶 **Core < 1.500 LOC (833 LOC)**: Architettura modulare progettata per essere auditabile e manutenibile in meno di 1 ora.
+
+---
+
+## 🚀 Guida Rapida
+
+### 1. Integrazione con Next.js App Router (1 Minuto)
+
+Crea il file `app/api/auth/[...zeroauth]/route.ts`:
+
+```typescript
+import { ZeroAuthServer, SqliteStorageAdapter, createZeroAuthHandler } from '@zeroauth/server';
+
+const server = new ZeroAuthServer({
+  rp: {
+    name: 'La Mia App',
+    id: process.env.NODE_ENV === 'production' ? 'miodominio.com' : 'localhost',
+    origin: process.env.NODE_ENV === 'production' ? 'https://miodominio.com' : 'http://localhost:3000',
+  },
+  storage: new SqliteStorageAdapter({ filename: './zeroauth.db' }),
+});
+
+export const { GET, POST } = {
+  GET: createZeroAuthHandler(server),
+  POST: createZeroAuthHandler(server),
+};
+```
+
+### 2. Integrazione Frontend con React
+
+Avvolgi l'applicazione con `<ZeroAuthProvider>` e usa `<PasskeyButton>`:
+
+```tsx
+import { ZeroAuthProvider, useZeroAuth, PasskeyButton } from '@zeroauth/react';
+
+function LoginScreen() {
+  const { login, user, isAuthenticated } = useZeroAuth();
+
+  if (isAuthenticated) {
+    return <div>Bentornato, {user?.username}!</div>;
+  }
+
+  return (
+    <div>
+      <PasskeyButton onClick={() => login()} variant="primary">
+        Accedi con Touch ID / Windows Hello
+      </PasskeyButton>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ZeroAuthProvider apiBaseUrl="/api/auth">
+      <LoginScreen />
+    </ZeroAuthProvider>
+  );
+}
+```
+
+### 3. Avvia la Demo Standalone in Locale
+
+```bash
+git clone https://github.com/MRJonam91/ZeroAuth.git
+cd ZeroAuth
+npm install
+npm run build
+node examples/standalone-demo/server.mjs
+```
+Apri `http://localhost:3000` nel browser per provare la registrazione e l'accesso biometrico!
 
 ---
 
@@ -59,7 +128,7 @@ packages/
 ├── core/       # Primitive crittografiche WebCrypto pure (< 1.500 LOC, zero dipendenze pesanti)
 ├── server/     # Relying Party server handler, gestione sessioni e storage adapters
 ├── client/     # SDK per browser con Conditional UI (Autofill) e controlli hardware
-└── react/      # Hook reattivi (usePasskey) per integrazione immediata in React/Next.js
+└── react/      # Hook reattivi (useZeroAuth) e componenti UI (<PasskeyButton>)
 ```
 
 ---

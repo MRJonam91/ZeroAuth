@@ -1,6 +1,6 @@
 {
   "name": "@zeroauth/react",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "React hooks and headless components for ZeroAuth",
   "type": "module",
   "main": "dist/index.js",
@@ -19,8 +19,8 @@
     "react": ">=18.0.0"
   },
   "dependencies": {
-    "@zeroauth/client": "^0.1.0",
-    "@zeroauth/core": "^0.1.0"
+    "@zeroauth/client": "^1.0.0",
+    "@zeroauth/core": "^1.0.0"
   },
   "license": "MIT",
   "devDependencies": {

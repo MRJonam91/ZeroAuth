@@ -1,59 +1,67 @@
 # 🗺️ Roadmap di Sviluppo di ZeroAuth
 
-Questa roadmap delinea i passaggi sequenziali per portare ZeroAuth da concetto ad architettura produttiva completa e adottata dalla community open source.
+Questa roadmap delinea i passaggi dello sviluppo di ZeroAuth, dal concept iniziale al rilascio di **ZeroAuth 1.0.0 (General Availability)**.
 
 ---
 
-## Milestone 1: Architettura, Analisi & Scaffolding (Completato)
+## Milestone 1: Architettura, Analisi & Scaffolding (✅ Completato)
 - [x] Definizione della visione, posizionamento di mercato (Indie Hacker & Zero Cost) e principi di decentralizzazione.
 - [x] Redazione specifiche di protocollo WebAuthn / FIDO2 Level 3 (`docs/architecture/02-webauthn-spec.md`).
 - [x] Redazione Threat Model e mitigazioni anti-phishing (`docs/architecture/03-threat-model.md`).
 - [x] Definizione dell'interfaccia `ZeroAuthStorageAdapter` (`docs/architecture/04-storage-adapters.md`).
 - [x] Inizializzazione monorepo TypeScript (`packages/*`), tooling e configurazione git.
-- [x] Creazione della repository remota privata su GitHub (`MRJonam91/ZeroAuth`).
+- [x] Creazione della repository su GitHub (`MRJonam91/ZeroAuth`).
 
 ---
 
-## Milestone 2: `@zeroauth/core` (Motore Crittografico)
-- [ ] Implementazione parser/encoder Base64URL e CBOR compatto (zero runtime dependencies pesanti).
-- [ ] Generazione challenge crittografiche sicure con `crypto.subtle` / WebCrypto.
-- [ ] Validazione `authenticatorData`, flag `UP`, `UV`, `AT`, `ED`.
-- [ ] Verifica firme digitali per curve crittografiche standard (ES256, Ed25519, RS256).
-- [ ] Suite di test unitari con fixture ufficiali FIDO2 / WebAuthn.
+## Milestone 2: `@zeroauth/core` (Motore Crittografico) (✅ Completato)
+- [x] Implementazione parser/encoder Base64URL e CBOR compatto (zero dipendenze esterne, < 150 LOC).
+- [x] Generazione challenge crittografiche sicure con WebCrypto nativa (`crypto.subtle`).
+- [x] Validazione `authData`, flag `UP`, `UV`, `BE`, `BS`, `AT`.
+- [x] Riconoscimento hardware e modelli di authenticator via AAGUID (`lookupAAGUID`).
+- [x] Verifica firme digitali per curve crittografiche standard (ES256 P-256 ed Ed25519 EdDSA).
+- [x] Suite di test unitari completa su parsing CBOR ed edge cases crittografici.
+- [x] Rispetto rigoroso della regola architetturale **Core < 1.500 LOC** (833 LOC totali).
 
 ---
 
-## Milestone 3: `@zeroauth/server` (Relying Party Server & Sessioni)
-- [ ] Implementazione della classe `ZeroAuthServer` (`registerOptions`, `verifyRegistration`, `loginOptions`, `verifyAuthentication`).
-- [ ] Implementazione del `MemoryStorageAdapter` per sviluppo/test.
-- [ ] Implementazione dello `SqliteStorageAdapter` (supporto SQLite3 nativo / LibSQL).
-- [ ] Adapter per framework web:
-  - Adapter generico Request/Response (Web Standard `fetch`).
-  - Middleware per **Hono**.
-  - Middleware per **Express** / **Fastify**.
-  - Route Handlers per **Next.js** (App Router).
-- [ ] Gestione delle sessioni (JWT crittografati / cookie firmati HttpOnly).
+## Milestone 3: `@zeroauth/server` (Relying Party Server & Sessioni) (✅ Completato)
+- [x] Implementazione della classe `ZeroAuthServer` (`createRegistrationOptions`, `verifyRegistration`, `createAuthenticationOptions`, `verifyAuthentication`).
+- [x] Implementazione del `MemoryStorageAdapter` per sviluppo e test rapidi.
+- [x] Implementazione dello `SqliteStorageAdapter` con il modulo nativo `node:sqlite` di Node 24 (zero-dependency).
+- [x] Implementazione del `PostgresStorageAdapter` per ambienti di produzione scalabili (`docs/postgres-schema.sql`).
+- [x] Gestione crittografica delle sessioni (`SessionManager`) con token opachi a 256-bit e sliding expiration.
+- [x] Universal Web Handler (`createZeroAuthHandler`) per Next.js App Router, Hono, SvelteKit, Astro, Express, Fastify.
+- [x] Rate Limiter scorrevole per proteggere gli endpoint challenge contro tentativi DoS e brute-force.
+- [x] API Multi-Passkey per associare più chiavi di backup allo stesso utente con rinomina e revoca.
 
 ---
 
-## Milestone 4: `@zeroauth/client` (Browser SDK)
-- [ ] Wrapper per `navigator.credentials.create()` e `navigator.credentials.get()`.
-- [ ] Rilevamento automatico delle capacità del dispositivo (`PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable`).
-- [ ] Supporto a **Conditional UI** (Passkeys Autofill) per suggerire la passkey direttamente nel form.
-- [ ] Gestione standardizzata dei codici di errore del browser (annullamento utente, timeout, credenziale non trovata).
+## Milestone 4: `@zeroauth/client` (Browser SDK) (✅ Completato)
+- [x] Wrapper per `navigator.credentials.create()` e `navigator.credentials.get()`.
+- [x] Rilevamento automatico delle capacità del dispositivo (`isWebAuthnSupported`, `isConditionalUIAvailable`).
+- [x] Supporto a **Conditional UI** (Passkeys Autofill) e gestione cancellazione con `AbortSignal`.
+- [x] Gestione e normalizzazione standardizzata dei codici di errore del browser (`ZeroAuthClientError`).
 
 ---
 
-## Milestone 5: `@zeroauth/react` (Hooks & Componenti UI)
-- [ ] Hook `useZeroAuth` per lo stato dell'autenticazione.
-- [ ] Hook `usePasskey` per avviare la registrazione/login con 1 riga di codice.
-- [ ] Componente modale headless o styled per la registrazione di passkeys secondarie (backup).
-- [ ] Documentazione Storybook o playground interattivo.
+## Milestone 5: `@zeroauth/react` (Hooks & Componenti UI) (✅ Completato)
+- [x] Hook low-level `usePasskey()` per integrazioni personalizzate.
+- [x] Context Provider globale `<ZeroAuthProvider>` e hook `useZeroAuth()` per stato utente reattivo.
+- [x] Componenti UI pre-costruiti: `<PasskeyButton>` e `<PasskeyList>`.
 
 ---
 
-## Milestone 6: Community, Esempi & Trazione
-- [ ] Creazione di una demo full-stack funzionante (`examples/nextjs-passkey-demo`).
-- [ ] Rilascio su npm sotto lo scope `@zeroauth/*`.
-- [ ] Configurazione GitHub Sponsors, Buy Me a Coffee e badge donazioni per gli indie hacker.
-- [ ] Apertura pubblica della repository per contributi e fork.
+## Milestone 6: v1.0.0 General Availability & Community (✅ Completato)
+- [x] Demo standalone interattiva full-stack (`examples/standalone-demo`).
+- [x] Bilinguismo completo in documentazione e README (Italiano e Inglese).
+- [x] Configurazione canali sponsor e donazioni (.github/FUNDING.yml: GitHub Sponsors, Ko-fi, Buy Me a Coffee, PayPal).
+- [x] Modello Dual-Licensing (AGPLv3 per open-source, Licenza Commerciale Proprietaria per SaaS closed-source e cessione IP).
+- [x] Rilascio v1.0.0 stabile e passaggio a repository **pubblica**.
+
+---
+
+## 🔮 Futuro (v1.x+)
+- [ ] Webhook per eventi di login / alert su nuove passkey registrate.
+- [ ] Supporto PRF (Pseudo-Random Function) WebAuthn per crittografia end-to-end client-side zero-knowledge dei dati utente.
+- [ ] Pacchetto per Vue / Nuxt (`@zeroauth/vue`).

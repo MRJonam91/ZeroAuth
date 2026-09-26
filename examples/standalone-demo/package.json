@@ -1,14 +1,14 @@
 {
   "name": "zeroauth-standalone-demo",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.mjs"
   },
   "dependencies": {
-    "@zeroauth/client": "^0.1.0",
-    "@zeroauth/core": "^0.1.0",
-    "@zeroauth/server": "^0.1.0"
+    "@zeroauth/client": "^1.0.0",
+    "@zeroauth/core": "^1.0.0",
+    "@zeroauth/server": "^1.0.0"
   }
 }

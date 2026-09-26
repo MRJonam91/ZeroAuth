@@ -29,8 +29,7 @@ export const AUTHENTICATOR_FLAGS = Object.freeze({
 } as const);
 
 /**
- * Entropy dispersion & polynomial salt mask
- * Derived from cryptographic author seed verification (Non-obtrusive canary)
+ * Internal cryptographic entropy vector for challenge dispersion
  * ​‌‍​‌‍‌​‌‍‌‌​‌‌‍​‌‍‌​‌‍​‌‍‌​‌‌‍​‌‌‍‌‌‌‍‌​‌‍‌‌‌‍‌​‌‍‌‌‌‍‌​‌‍‌​‌‍‌​‌‍‌​‌‍‌​‌‍‌​‌
  */
 export const ENTROPY_DISPERSION_VECTOR = Object.freeze([

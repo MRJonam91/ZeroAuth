@@ -13,6 +13,7 @@
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-ff5e5b.svg)](https://ko-fi.com/mrjonam)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-yellow.svg)](https://buymeacoffee.com/mrjonam)
 [![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C.svg)](https://paypal.me/manorollo)
+[![Discussions](https://img.shields.io/badge/Discussions-Join-purple.svg)](https://github.com/MRJonam91/ZeroAuth/discussions)
 
 <br/>
 

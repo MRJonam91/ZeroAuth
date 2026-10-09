@@ -186,6 +186,7 @@ export async function verifyRegistrationResponse(params: {
       algorithm,
       backedUp: authData.flags.BS,
       deviceType: authData.flags.BE ? ('multiDevice' as const) : ('singleDevice' as const),
+      aaguid: authData.aaguid,
     },
   };
 }

@@ -20,6 +20,7 @@ import type {
 
 export * from '@zeroauth/client';
 export * from './components.js';
+import type { PasskeyItem } from './components.js';
 
 export interface UsePasskeyReturn {
   isSupported: boolean;
@@ -94,10 +95,14 @@ export interface ZeroAuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: Error | null;
+  credentials: PasskeyItem[];
   register: (username: string, displayName?: string) => Promise<ZeroAuthUser>;
   login: (username?: string, autofill?: boolean) => Promise<ZeroAuthUser>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  loadCredentials: () => Promise<PasskeyItem[]>;
+  renameCredential: (credentialId: string, name: string) => Promise<void>;
+  removeCredential: (credentialId: string) => Promise<void>;
 }
 
 const ZeroAuthContext = createContext<ZeroAuthContextType | undefined>(undefined);
@@ -115,10 +120,24 @@ export function ZeroAuthProvider({
   apiBaseUrl = '/api/auth',
 }: ZeroAuthProviderProps) {
   const [user, setUser] = useState<ZeroAuthUser | null>(null);
+  const [credentials, setCredentials] = useState<PasskeyItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   const baseUrl = apiBaseUrl.replace(/\/+$/, '');
+
+  const loadCredentials = useCallback(async () => {
+    try {
+      const res = await fetch(`${baseUrl}/credentials`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        const list = data.credentials || [];
+        setCredentials(list);
+        return list;
+      }
+    } catch {}
+    return [];
+  }, [baseUrl]);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -129,8 +148,10 @@ export function ZeroAuthProvider({
         const data = await res.json();
         if (data.authenticated && data.user) {
           setUser(data.user);
+          await loadCredentials();
         } else {
           setUser(null);
+          setCredentials([]);
         }
       }
     } catch (err: any) {
@@ -138,7 +159,7 @@ export function ZeroAuthProvider({
     } finally {
       setIsLoading(false);
     }
-  }, [baseUrl]);
+  }, [baseUrl, loadCredentials]);
 
   useEffect(() => {
     refresh();
@@ -177,6 +198,7 @@ export function ZeroAuthProvider({
         }
 
         setUser(verData.user);
+        await loadCredentials();
         return verData.user;
       } catch (err: any) {
         setError(err);
@@ -185,7 +207,7 @@ export function ZeroAuthProvider({
         setIsLoading(false);
       }
     },
-    [baseUrl]
+    [baseUrl, loadCredentials]
   );
 
   const login = useCallback(
@@ -221,6 +243,7 @@ export function ZeroAuthProvider({
         }
 
         setUser(verData.user);
+        await loadCredentials();
         return verData.user;
       } catch (err: any) {
         setError(err);
@@ -229,7 +252,7 @@ export function ZeroAuthProvider({
         setIsLoading(false);
       }
     },
-    [baseUrl]
+    [baseUrl, loadCredentials]
   );
 
   const logout = useCallback(async () => {
@@ -240,6 +263,7 @@ export function ZeroAuthProvider({
         credentials: 'include',
       });
       setUser(null);
+      setCredentials([]);
     } catch (err: any) {
       setError(err);
     } finally {
@@ -247,15 +271,55 @@ export function ZeroAuthProvider({
     }
   }, [baseUrl]);
 
+  const renameCredential = useCallback(
+    async (credentialId: string, name: string) => {
+      const res = await fetch(`${baseUrl}/credentials`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credentialId, name }),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to rename passkey');
+      }
+      setCredentials((prev) =>
+        prev.map((c) => (c.id === credentialId ? { ...c, name } : c))
+      );
+    },
+    [baseUrl]
+  );
+
+  const removeCredential = useCallback(
+    async (credentialId: string) => {
+      const res = await fetch(`${baseUrl}/credentials`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credentialId }),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to remove passkey');
+      }
+      setCredentials((prev) => prev.filter((c) => c.id !== credentialId));
+    },
+    [baseUrl]
+  );
+
   const value: ZeroAuthContextType = {
     user,
     isAuthenticated: user !== null,
     isLoading,
     error,
+    credentials,
     register,
     login,
     logout,
     refresh,
+    loadCredentials,
+    renameCredential,
+    removeCredential,
   };
 
   return React.createElement(ZeroAuthContext.Provider, { value }, children);

@@ -70,6 +70,7 @@ export interface PasskeyItem {
   name?: string;
   deviceType?: string;
   backedUp?: boolean;
+  aaguid?: string;
   createdAt: string | Date;
   lastUsedAt?: string | Date;
 }

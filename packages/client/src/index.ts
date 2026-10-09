@@ -93,9 +93,26 @@ export async function isConditionalUIAvailable(): Promise<boolean> {
 }
 
 /**
+ * Check if the user's platform authenticator (Touch ID, Face ID, Windows Hello) is available
+ */
+export async function isPlatformAuthenticatorAvailable(): Promise<boolean> {
+  if (!isWebAuthnSupported()) return false;
+  if ('isUserVerifyingPlatformAuthenticatorAvailable' in PublicKeyCredential) {
+    try {
+      return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+/**
  * Trigger passkey registration prompt in the browser
  */
-export async function startPasskeyRegistration(options: RegistrationOptions) {
+export async function startPasskeyRegistration(
+  options: RegistrationOptions & { signal?: AbortSignal }
+) {
   if (!isWebAuthnSupported()) {
     throw new ZeroAuthClientError(
       'WebAuthn is not supported in this browser environment',
@@ -127,8 +144,8 @@ export async function startPasskeyRegistration(options: RegistrationOptions) {
 
     const credential = (await navigator.credentials.create({
       publicKey: publicKeyCredentialCreationOptions,
-      signal: (options as any).signal,
-    })) as PublicKeyCredential | null;
+      signal: options.signal,
+    })) as (PublicKeyCredential & { authenticatorAttachment?: 'platform' | 'cross-platform' }) | null;
 
     if (!credential) {
       throw new ZeroAuthClientError('Registration failed: no credential created', 'UNKNOWN');
@@ -140,6 +157,7 @@ export async function startPasskeyRegistration(options: RegistrationOptions) {
       id: credential.id,
       rawId: uint8ArrayToBase64Url(new Uint8Array(credential.rawId)),
       type: credential.type,
+      authenticatorAttachment: credential.authenticatorAttachment,
       response: {
         clientDataJSON: uint8ArrayToBase64Url(new Uint8Array(response.clientDataJSON)),
         attestationObject: uint8ArrayToBase64Url(new Uint8Array(response.attestationObject)),
@@ -183,7 +201,7 @@ export async function startPasskeyAuthentication(
       publicKey: publicKeyCredentialRequestOptions,
       mediation: useConditionalUI ? 'conditional' : 'optional',
       signal: options.signal,
-    })) as PublicKeyCredential | null;
+    })) as (PublicKeyCredential & { authenticatorAttachment?: 'platform' | 'cross-platform' }) | null;
 
     if (!credential) {
       throw new ZeroAuthClientError('Authentication failed: no credential provided', 'UNKNOWN');
@@ -195,6 +213,7 @@ export async function startPasskeyAuthentication(
       id: credential.id,
       rawId: uint8ArrayToBase64Url(new Uint8Array(credential.rawId)),
       type: credential.type,
+      authenticatorAttachment: credential.authenticatorAttachment,
       response: {
         clientDataJSON: uint8ArrayToBase64Url(new Uint8Array(response.clientDataJSON)),
         authenticatorData: uint8ArrayToBase64Url(new Uint8Array(response.authenticatorData)),

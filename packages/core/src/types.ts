@@ -31,6 +31,7 @@ export interface ZeroAuthCredential {
   deviceType?: 'singleDevice' | 'multiDevice';
   backedUp?: boolean;
   name?: string;
+  aaguid?: string;
   createdAt: Date;
   lastUsedAt?: Date;
 }

@@ -184,6 +184,7 @@ export function createZeroAuthHandler(
             name: c.name,
             deviceType: c.deviceType,
             backedUp: c.backedUp,
+            aaguid: c.aaguid,
             createdAt: c.createdAt,
             lastUsedAt: c.lastUsedAt,
           })),

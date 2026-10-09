@@ -11,7 +11,7 @@
     "examples/*"
   ],
   "scripts": {
-    "build": "npm run --workspaces --if-present build",
+    "build": "npm run --workspace=@zeroauth/core build && npm run --workspace=@zeroauth/client build && npm run --workspace=@zeroauth/server build && npm run --workspace=@zeroauth/react build",
     "test": "npm run --workspaces --if-present test",
     "typecheck": "npm run --workspaces --if-present typecheck",
     "lint": "npm run --workspaces --if-present lint",

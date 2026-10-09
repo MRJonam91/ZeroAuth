@@ -10,6 +10,7 @@ import {
   verifyAuthenticationResponse,
   parseClientData,
   lookupAAGUID,
+  aaguidBytesToUuid,
 } from '@zeroauth/core';
 import { ZeroAuthStorageAdapter, MemoryStorageAdapter } from './storage.js';
 import { RateLimiter } from './rate-limiter.js';
@@ -162,8 +163,10 @@ export class ZeroAuthServer {
       });
     }
 
-    // Default friendly device name if not provided
-    const aaguidMeta = verification.credential.id ? lookupAAGUID(new Uint8Array(16)) : null;
+    // Resolve hardware device metadata from AAGUID if present
+    const rawAaguid = verification.credential.aaguid;
+    const aaguidStr = rawAaguid ? aaguidBytesToUuid(rawAaguid) : undefined;
+    const aaguidMeta = rawAaguid ? lookupAAGUID(rawAaguid) : null;
     const defaultName = params.credentialName || aaguidMeta?.name || 'Passkey Device';
 
     const now = new Date();
@@ -175,6 +178,7 @@ export class ZeroAuthServer {
       deviceType: verification.credential.deviceType,
       backedUp: verification.credential.backedUp,
       name: defaultName,
+      aaguid: aaguidStr,
       createdAt: now,
       lastUsedAt: now,
     };

@@ -82,6 +82,7 @@ test('Universal Handler: GET /credentials, PATCH /credentials, DELETE /credentia
     publicKey: new Uint8Array([10, 20]),
     counter: 0,
     name: 'iPhone 15 Pro',
+    aaguid: 'dd48324f-6371-4f9a-bd29-0e0ecb3c4720',
     createdAt: new Date(),
   });
 
@@ -95,6 +96,7 @@ test('Universal Handler: GET /credentials, PATCH /credentials, DELETE /credentia
   const getData = await getRes.json();
   assert.strictEqual(getData.credentials.length, 1);
   assert.strictEqual(getData.credentials[0].name, 'iPhone 15 Pro');
+  assert.strictEqual(getData.credentials[0].aaguid, 'dd48324f-6371-4f9a-bd29-0e0ecb3c4720');
 
   // 2. PATCH /credentials (Rename)
   const patchReq = new Request('http://localhost:3000/api/auth/credentials', {

@@ -107,6 +107,53 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    // Helper to get session user
+    const authHeader = req.headers['authorization'] || '';
+    const sessionId = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+    const sessionUser = sessionId ? sessions.get(sessionId) : null;
+
+    if (req.method === 'GET' && url.pathname === '/api/me') {
+      if (!sessionUser) return sendJson(res, 200, { authenticated: false, user: null });
+      return sendJson(res, 200, { authenticated: true, user: sessionUser });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/logout') {
+      if (sessionId) sessions.delete(sessionId);
+      return sendJson(res, 200, { success: true });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/credentials') {
+      if (!sessionUser) return sendJson(res, 401, { error: 'Unauthorized' });
+      const creds = await zeroAuth.listUserCredentials(sessionUser.id);
+      return sendJson(res, 200, {
+        credentials: creds.map((c) => ({
+          id: c.id,
+          name: c.name,
+          deviceType: c.deviceType,
+          backedUp: c.backedUp,
+          aaguid: c.aaguid,
+          createdAt: c.createdAt,
+          lastUsedAt: c.lastUsedAt,
+        })),
+      });
+    }
+
+    if (req.method === 'PATCH' && url.pathname === '/api/credentials') {
+      if (!sessionUser) return sendJson(res, 401, { error: 'Unauthorized' });
+      const { credentialId, name } = await parseBody(req);
+      if (!credentialId || !name) return sendJson(res, 400, { error: 'credentialId and name are required' });
+      await zeroAuth.renameCredential(credentialId, name);
+      return sendJson(res, 200, { success: true });
+    }
+
+    if (req.method === 'DELETE' && url.pathname === '/api/credentials') {
+      if (!sessionUser) return sendJson(res, 401, { error: 'Unauthorized' });
+      const { credentialId } = await parseBody(req);
+      if (!credentialId) return sendJson(res, 400, { error: 'credentialId is required' });
+      await zeroAuth.revokeCredential(credentialId);
+      return sendJson(res, 200, { success: true });
+    }
+
     // 404
     sendJson(res, 404, { error: 'Not Found' });
   } catch (err) {

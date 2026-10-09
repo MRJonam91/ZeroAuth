@@ -32,13 +32,22 @@
     .btn:hover { background: var(--primary-hover); }
     .btn-secondary { background: #1f293d; color: #e5e7eb; }
     .btn-secondary:hover { background: #374151; }
+    .btn-sm { padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 6px; }
+    .btn-danger { background: #7f1d1d; color: #fca5a5; }
+    .btn-danger:hover { background: #991b1b; }
     .console-box { background: #050811; border: 1px solid #1a2234; border-radius: 8px; padding: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; color: #34d399; max-height: 220px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin-top: 15px; }
     .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
     .badge-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
     .badge-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .badge-info { background: rgba(6, 182, 212, 0.2); color: #38bdf8; }
     .sponsor-bar { text-align: center; margin-top: 20px; font-size: 0.9rem; color: var(--muted); }
     .sponsor-bar a { color: var(--cyan); text-decoration: none; font-weight: 600; margin: 0 6px; }
     .sponsor-bar a:hover { text-decoration: underline; }
+    .cred-item { display: flex; justify-content: space-between; align-items: center; background: #0b1120; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; }
+    .cred-meta { display: flex; flex-direction: column; gap: 4px; }
+    .cred-title { font-weight: 600; font-size: 0.95rem; color: #fff; }
+    .cred-sub { font-size: 0.8rem; color: var(--muted); }
+    .cred-actions { display: flex; gap: 8px; align-items: center; }
   </style>
 </head>
 <body>
@@ -78,6 +87,20 @@
       </button>
     </div>
 
+    <!-- Active Session & Passkey Management Section -->
+    <div class="card" id="session-card" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h2><span>🔑</span> Active Session & Registered Passkeys</h2>
+        <button class="btn btn-secondary btn-sm" id="btn-logout">Sign Out</button>
+      </div>
+      <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 16px;">
+        Authenticated as: <strong id="session-username" style="color: var(--primary);"></strong>
+      </p>
+      <div id="credentials-list" style="margin-bottom: 15px;">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
     <!-- Cryptographic Audit Log -->
     <div class="card">
       <h2><span>📋</span> Cryptographic Handshake Audit Log</h2>
@@ -96,6 +119,9 @@
   </div>
 
   <script>
+    let currentSessionId = null;
+    let currentUser = null;
+
     const logBox = document.getElementById('audit-log');
     function log(msg, obj) {
       const timestamp = new Date().toLocaleTimeString();
@@ -134,6 +160,120 @@
     } else {
       statusDiv.innerHTML = '<span class="badge badge-danger">✗ WebAuthn Not Supported in this Browser</span>';
     }
+
+    async function loadCredentials() {
+      if (!currentSessionId) return;
+      try {
+        const res = await fetch('/api/credentials', {
+          headers: { Authorization: `Bearer ${currentSessionId}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const listDiv = document.getElementById('credentials-list');
+        listDiv.innerHTML = '';
+
+        if (!data.credentials || data.credentials.length === 0) {
+          listDiv.innerHTML = '<p style="color: var(--muted); font-size: 0.85rem;">No passkeys registered yet.</p>';
+          return;
+        }
+
+        data.credentials.forEach((cred) => {
+          const item = document.createElement('div');
+          item.className = 'cred-item';
+          const backupBadge = cred.backedUp
+            ? '<span class="badge badge-info">Synced iCloud/Google</span>'
+            : '<span class="badge badge-success">Hardware-Bound</span>';
+
+          item.innerHTML = `
+            <div class="cred-meta">
+              <div class="cred-title">${escapeHtml(cred.name || 'Passkey Device')} ${backupBadge}</div>
+              <div class="cred-sub">
+                ID: ${cred.id.slice(0, 16)}... • Registered ${new Date(cred.createdAt).toLocaleDateString()}
+                ${cred.aaguid ? `• AAGUID: <code>${cred.aaguid}</code>` : ''}
+              </div>
+            </div>
+            <div class="cred-actions">
+              <button class="btn btn-secondary btn-sm" onclick="renameKey('${cred.id}', '${escapeHtml(cred.name)}')">Rename</button>
+              <button class="btn btn-danger btn-sm" onclick="revokeKey('${cred.id}')">Revoke</button>
+            </div>
+          `;
+          listDiv.appendChild(item);
+        });
+      } catch (err) {
+        console.error('Failed to load credentials:', err);
+      }
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    window.renameKey = async function(credentialId, oldName) {
+      const newName = prompt('Enter a new friendly name for this passkey:', oldName);
+      if (!newName || !newName.trim()) return;
+      try {
+        const res = await fetch('/api/credentials', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${currentSessionId}`,
+          },
+          body: JSON.stringify({ credentialId, name: newName.trim() }),
+        });
+        if (res.ok) {
+          log(`✏️ Renamed passkey "${credentialId}" to "${newName.trim()}"`);
+          loadCredentials();
+        }
+      } catch (err) {
+        log(`❌ Error renaming passkey: ${err.message}`);
+      }
+    };
+
+    window.revokeKey = async function(credentialId) {
+      if (!confirm('Are you sure you want to revoke this passkey? You will no longer be able to use this hardware device to sign in.')) return;
+      try {
+        const res = await fetch('/api/credentials', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${currentSessionId}`,
+          },
+          body: JSON.stringify({ credentialId }),
+        });
+        if (res.ok) {
+          log(`🗑️ Revoked passkey "${credentialId}"`);
+          loadCredentials();
+        }
+      } catch (err) {
+        log(`❌ Error revoking passkey: ${err.message}`);
+      }
+    };
+
+    function setSession(sessionId, user) {
+      currentSessionId = sessionId;
+      currentUser = user;
+      const sessionCard = document.getElementById('session-card');
+      const sessionUsername = document.getElementById('session-username');
+
+      if (sessionId && user) {
+        sessionUsername.textContent = user.username;
+        sessionCard.style.display = 'block';
+        loadCredentials();
+      } else {
+        sessionCard.style.display = 'none';
+      }
+    }
+
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+      if (currentSessionId) {
+        await fetch('/api/logout', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${currentSessionId}` },
+        });
+      }
+      log('🚪 User signed out. Session destroyed.');
+      setSession(null, null);
+    });
 
     // Register Button
     document.getElementById('btn-register').addEventListener('click', async () => {
@@ -184,7 +324,8 @@
 
         log('4. ✅ SUCCESS: Passkey verified and stored in SQLite!', verifyResult);
         document.getElementById('login-username').value = username;
-        alert(`Passkey successfully registered for ${username}! You can now sign in.`);
+        setSession(verifyResult.sessionId, verifyResult.user);
+        alert(`Passkey successfully registered for ${username}! Session active.`);
       } catch (err) {
         log(`❌ Registration Error: ${err.message}`);
         console.error(err);
@@ -241,6 +382,7 @@
         if (verifyResult.error) throw new Error(verifyResult.error);
 
         log('4. 🟢 AUTHENTICATED: Signature verified in 12ms! Session active.', verifyResult);
+        setSession(verifyResult.sessionId, verifyResult.user);
         alert(`Welcome back, ${verifyResult.user.username}! You are securely authenticated with Passkeys.`);
       } catch (err) {
         log(`❌ Login Error: ${err.message}`);

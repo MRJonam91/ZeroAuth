@@ -15,7 +15,7 @@ const ORIGIN = `http://${HOST}:${PORT}`;
 const storage = new SqliteStorageAdapter({ filename: path.join(__dirname, 'demo-zeroauth.db') });
 const zeroAuth = new ZeroAuthServer({
   rp: {
-    name: 'ZeroAuth MVP Interactive Demo',
+    name: 'ZeroAuth Interactive Demo',
     id: HOST,
     origin: ORIGIN,
   },
@@ -163,6 +163,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`\n🚀 ZeroAuth MVP Demo running at: ${ORIGIN}`);
+  console.log(`\n🚀 ZeroAuth Interactive Demo running at: ${ORIGIN}`);
   console.log(`   Open ${ORIGIN} in your browser to test Passkeys registration & login!\n`);
 });

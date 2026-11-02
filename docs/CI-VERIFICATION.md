@@ -15,3 +15,9 @@ Revisione: 2 novembre 2026. Su una copia pulita, `npm ci --ignore-scripts` e poi
 La CI esegue ora `npm run build` nell'ordine delle dipendenze già previsto dal progetto, poi typecheck e test. Gli script obbligatori non usano `--if-present`: la loro assenza deve far fallire il job. Il dispatch manuale permette di verificare il commit corrente.
 
 Prova locale Windows con Node 24.14.0: build e typecheck riusciti; 34 test passati (5 client, 12 core, 3 React, 14 server). Il messaggio invalid-hook è atteso da un test negativo che passa. Non dimostra compatibilità con autenticatori reali, audit di sicurezza o prontezza produttiva. La matrice remota Node 20/22/24 richiede controllo separato dopo la pubblicazione.
+
+## Current runtime boundary / Requisito runtime aggiornato
+
+EN: The first remote run passed Node 24 but exposed `ERR_UNKNOWN_BUILTIN_MODULE: node:sqlite` on Node 20. The server imports SQLite directly, so its actual minimum is Node 22.13.0 (SQLite available without an experimental flag). Root/server engines and the lockfile now state that minimum; CI tests 22.13.0, latest 22 and 24 with fail-fast disabled. [Node SQLite history](https://nodejs.org/download/release/v22.23.0/docs/api/sqlite.html).
+
+IT: Il primo run remoto supera Node 24 e fallisce su Node 20 per `node:sqlite` assente. Il server lo importa direttamente: il minimo effettivo e Node 22.13.0, che espone SQLite senza flag sperimentale. Engine, lockfile e README sono allineati; la CI prova 22.13.0, 22 corrente e 24 senza cancellare gli altri job al primo errore.

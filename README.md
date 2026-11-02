@@ -1,3 +1,5 @@
+**Runtime requirement:** Node.js 22.13.0+ and npm 10+. The server imports native `node:sqlite`; Node 20 is not supported. See [CI verification](docs/CI-VERIFICATION.md).
+
 <div align="center">
 
 # 🔑 ZeroAuth
